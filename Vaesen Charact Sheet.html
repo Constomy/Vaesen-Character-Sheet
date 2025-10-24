@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vaesen Character Sheet Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Using a classic serif font (Crimson Text) for the printed document feel -->
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for 19th Century RPG Sheet Look */
+        :root {
+            --sheet-bg: #fcf8f0; /* Sepia-toned paper background */
+            --sheet-border: #1a1a1a;
+            --header-color: #1a1a1a;
+            --accent-red: #8b0000; /* Darker, more muted red */
+        }
+
+        body {
+            font-family: 'Crimson Text', serif;
+            background-color: #2c2c2c; /* Dark, moody background */
+        }
+
+        .sheet-container {
+            max-width: 1000px;
+            background-color: var(--sheet-bg);
+            border: 5px double var(--sheet-border); /* Prominent double border */
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Large 'VAESEN' Title */
+        .sheet-title-header {
+            font-family: 'Inter', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--accent-red);
+        }
+
+        /* Main Section Headers (e.g., RELATIONSHIPS, CONDITIONS) - Thick Underline */
+        .sheet-header {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--header-color);
+            text-transform: uppercase;
+            border-bottom: 3px solid var(--sheet-border); 
+            padding-bottom: 0.25rem;
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* Sub Headers (e.g., ATTRIBUTES, SKILLS, ARMOR) - Solid Underline */
+        .sheet-subheader {
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--sheet-border);
+            padding-bottom: 2px;
+            letter-spacing: 0.03em;
+        }
+
+        /* Styling for single-line inputs (Name, Age, Motivation, etc.) */
+        .input-line {
+            border: none;
+            border-bottom: 2px solid var(--sheet-border); /* Bold bottom line for writing space */
+            padding: 0 4px;
+            background-color: transparent;
+            font-size: 1rem;
+            line-height: 1.2;
+            height: 35px; /* Slightly taller for visual space */
+            box-sizing: border-box;
+            width: 100%;
+            font-weight: 600; 
+            color: #000;
+        }
+        
+        /* Styling for multi-line blocks (Vaesen, Talents, Equipment, Notes) */
+        .text-block-input {
+            border: 2px solid var(--sheet-border); /* Defined frame border */
+            padding: 8px;
+            background-color: white;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            box-sizing: border-box;
+            width: 100%;
+            min-height: 4.5rem;
+            resize: vertical;
+        }
+
+        /* Styling for the Archetype dropdown select (tall) */
+        .select-input {
+            border: 2px solid var(--sheet-border); 
+            padding: 8px;
+            background-color: white;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            box-sizing: border-box;
+            width: 100%;
+            height: 4.5rem;
+            /* Hide default arrow in some browsers for cleaner look */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.9%20146.2%20210.7%205.4%2069.9z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 12px;
+            font-weight: 600;
+        }
+
+
+        /* Labels for single-line inputs */
+        .label-text {
+            display: block;
+            font-family: 'Inter', sans-serif; /* Use sans-serif for labels like a clean form title */
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-top: 0.5rem; 
+            margin-bottom: 2px; 
+            color: #555;
+            letter-spacing: 0.08em;
+        }
+
+        /* Score Boxes (Attributes, Skills, Totals) */
+        .score-box {
+            width: 32px;
+            height: 32px;
+            text-align: center;
+            border: 2px solid var(--sheet-border);
+            background-color: white;
+            padding: 0;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        /* Styling for the new Attribute/Skill dropdowns to fit in the small box */
+        .score-dropdown {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: center;
+            padding: 0;
+            /* Remove default browser styles for clean box look */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+        
+        /* Ensures the text is visually centered when using select */
+        .score-box > .score-dropdown {
+            padding: 0;
+            text-align-last: center; /* Center the selected text */
+        }
+        
+        /* Attribute block styling */
+        .attribute-input-wrapper {
+            background-color: #eee; /* Light gray background to separate section */
+            padding: 1rem;
+            border: 1px solid #ccc;
+        }
+
+        /* Skill Row Styling */
+        .skill-row .attr-display {
+            background-color: #f0f0f0; 
+            border-width: 1px;
+        }
+        .skill-row .total-score {
+            background-color: #d1d1d1; /* Shading for the final score */
+            border-width: 1px;
+            font-size: 1.05rem;
+        }
+
+        /* Conditions Checkbox Style */
+        .condition-checkbox {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--sheet-border);
+            background-color: white;
+            margin-right: 8px;
+            border-radius: 0;
+            position: relative;
+            cursor: pointer;
+        }
+        /* Checkmark styling - FIXED using CSS hex code \2713 */
+        .condition-checkbox:checked {
+            background-color: var(--sheet-border);
+            border-color: var(--sheet-border);
+        }
+        .condition-checkbox:checked::after {
+            /* Unicode checkmark using CSS hex format */
+            content: '\2713'; 
+            color: white;
+            font-size: 14px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            line-height: 1; /* Ensures checkmark is vertically centered */
+        }
+
+        /* Button Styling for the export/import and dice roller */
+        .io-button {
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            padding: 0.5rem 1rem;
+            border-radius: 0;
+            box-shadow: 2px 2px 0px 0px rgba(0,0,0,0.5);
+            transition: all 0.1s;
+        }
+        .io-button:hover {
+            box-shadow: 1px 1px 0px 0px rgba(0,0,0,0.5);
+            transform: translate(1px, 1px);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div id="app" class="sheet-container mx-auto p-6 md:p-10 rounded-none">
+
+        <!-- TITLE & IMPORT/EXPORT -->
+        <div class="flex flex-col mb-6 border-b-4 border-gray-900 pb-2">
+            <!-- First Row: Title Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <h1 class="sheet-title-header">VAESEN</h1>
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mt-2 sm:mt-0 font-serif">CHARACTER SHEET</h2>
+            </div>
+            
+            <!-- Second Row: Buttons (The requested break is here) -->
+            <div class="flex justify-end space-x-2 mt-4 sm:mt-0 pt-2 border-t border-gray-300">
+                <input type="file" id="importFile" accept=".json" class="hidden" onchange="handleImport(event)">
+                <button onclick="document.getElementById('importFile').click()" class="io-button bg-gray-700 text-white text-sm hover:bg-gray-600">Import JSON</button>
+                <button onclick="exportData()" class="io-button bg-red-700 text-white text-sm hover:bg-red-600">Export JSON</button>
+                <button onclick="saveLocalCharacter()" class="io-button bg-blue-700 text-white text-sm hover:bg-blue-600">Save Local</button>
+            </div>
+        </div>
+
+        <!-- MAIN GRID LAYOUT -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- COLUMN 1 (DETAILS & ATTRIBUTES/SKILLS) -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Character Identity Block (Name/Age) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="label-text">Name</label>
+                        <input type="text" id="name" class="input-line" data-key="name">
+                    </div>
+                    <div>
+                        <label class="label-text">Age / Age Group</label>
+                        <input type="text" id="age" class="input-line" data-key="age">
+                    </div>
+                </div>
+
+                <!-- Motivation/Trauma/Dark Secret - EXPANDED -->
+                <div class="space-y-4">
+                    <div class="pt-2">
+                        <label class="label-text">Motivation</label>
+                        <textarea id="motivation" class="text-block-input" data-key="motivation" style="min-height: 3.5rem;"></textarea>
+                    </div>
+                    <div class="pt-2">
+                        <label class="label-text">Trauma</label>
+                        <textarea id="trauma" class="text-block-input" data-key="trauma" style="min-height: 3.5rem;"></textarea>
+                    </div>
+                    <div class="pt-2">
+                        <label class="label-text">Dark Secret</label>
+                        <textarea id="darkSecret" class="text-block-input" data-key="darkSecret" style="min-height: 3.5rem;"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Attributes and Skills -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                    <!-- Attributes -->
+                    <div>
+                        <div class="sheet-subheader">ATTRIBUTES</div>
+                        <div id="attributes-list" class="space-y-3 attribute-input-wrapper">
+                            <!-- Attribute Row: Physique (Updated to 0-5) -->
+                            <div class="flex justify-between items-center text-lg font-medium">
+                                <span>Physique</span>
+                                <div class="score-box w-7 h-7 text-sm">
+                                    <select id="attr-physique" class="score-dropdown" data-attr="physique" onchange="updateData(this)">
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Attribute Row: Precision (Updated to 0-5) -->
+                            <div class="flex justify-between items-center text-lg font-medium">
+                                <span>Precision</span>
+                                <div class="score-box w-7 h-7 text-sm">
+                                    <select id="attr-precision" class="score-dropdown" data-attr="precision" onchange="updateData(this)">
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Attribute Row: Logic (Updated to 0-5) -->
+                            <div class="flex justify-between items-center text-lg font-medium">
+                                <span>Logic</span>
+                                <div class="score-box w-7 h-7 text-sm">
+                                    <select id="attr-logic" class="score-dropdown" data-attr="logic" onchange="updateData(this)">
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Attribute Row: Empathy (Updated to 0-5) -->
+                            <div class="flex justify-between items-center text-lg font-medium">
+                                <span>Empathy</span>
+                                <div class="score-box w-7 h-7 text-sm">
+                                    <select id="attr-empathy" class="score-dropdown" data-attr="empathy" onchange="updateData(this)">
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills -->
+                    <div>
+                        <div class="sheet-subheader">SKILLS</div>
+                        <div id="skills-list" class="space-y-2">
+                            <!-- Skill Rows Rendered by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dice Roller (KEPT + RESET BUTTON ADDED) -->
+                <div class="pt-4 p-4 border border-gray-400 bg-gray-50">
+                    <div class="sheet-subheader text-center mb-4 border-none">DICE ROLLER</div>
+                    <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
+                        <select id="skill-to-roll" class="p-2 border border-gray-600 w-full md:w-1/2">
+                            <option value="">-- Select Skill --</option>
+                            <!-- Options populated by JS -->
+                        </select>
+                        <button onclick="rollDice()" class="io-button bg-green-700 text-white w-full md:w-1/2 hover:bg-green-600">ROLL</button>
+                    </div>
+                    <div id="roll-results" class="mt-4 p-3 border-2 border-dashed border-gray-600 bg-white min-h-[4rem] text-center flex items-center justify-center font-bold text-lg">
+                        Roll the dice! Success is a 6.
+                    </div>
+                    <button onclick="resetDiceRoller()" class="io-button bg-yellow-600 text-white text-sm mt-3 w-full hover:bg-yellow-500">Reset Roller</button>
+                </div>
+
+                <!-- Weapons (Dynamic rows added) -->
+                <div class="pt-4">
+                    <div class="sheet-subheader">WEAPONS</div>
+                    <div class="grid grid-cols-5 gap-2 text-xs font-semibold uppercase mb-1 border-b pb-1 border-gray-500 text-center">
+                        <span class="col-span-1 text-left font-bold">Name</span>
+                        <span class="font-bold">Damage</span>
+                        <span class="font-bold">Range</span>
+                        <span class="font-bold">Bonus</span>
+                        <span class="font-bold">Action</span>
+                    </div>
+                    <div id="weapons-list" class="space-y-2">
+                         <!-- Weapon Rows Rendered by JS -->
+                    </div>
+                    <button onclick="addWeaponRow()" class="io-button bg-gray-500 text-white text-sm mt-3 w-full hover:bg-gray-400">+ Add Weapon</button>
+                </div>
+            </div>
+
+            <!-- COLUMN 2 (SECONDARY DETAILS) -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Archetype Dropdown -->
+                <div class="pt-2">
+                    <label class="label-text">Archetype</label>
+                    <select id="archetype" class="select-input" data-key="archetype" onchange="updateData(this)">
+                        <option value="">-- Select Archetype --</option>
+                        <option value="Academic">Academic</option>
+                        <option value="Athlete">Athlete</option>
+                        <option value="Doctor">Doctor</option>
+                        <option value="Entertainer">Entertainer</option>
+                        <option value="Hunter">Hunter</option>
+                        <option value="Occultist">Occultist</option>
+                        <option value="Officer">Officer</option>
+                        <option value="Priest">Priest</option>
+                        <option value="Private Detective">Private Detective</option>
+                        <option value="Servant">Servant</option>
+                        <option value="Socialite">Socialite</option>
+                        <option value="Vagabond">Vagabond</option>
+                        <option value="Writer">Writer</option>
+                    </select>
+                </div>
+
+                <!-- Text Blocks -->
+                <div class="pt-2">
+                    <label class="label-text">Talents</label>
+                    <textarea id="talents" class="text-block-input" data-key="talents" style="min-height: 5rem;"></textarea>
+                </div>
+                <div class="pt-2">
+                    <label class="label-text">Insights & Defects</label>
+                    <textarea id="insightsDefects" class="text-block-input" data-key="insightsDefects" style="min-height: 5rem;"></textarea>
+                </div>
+                <div class="pt-2">
+                    <label class="label-text">Advantages</label>
+                    <textarea id="advantages" class="text-block-input" data-key="advantages" style="min-height: 5rem;"></textarea>
+                </div>
+
+                <!-- Armor/Memento/Resources -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <div class="sheet-subheader">ARMOR</div>
+                        <div class="mt-2">
+                            <label class="label-text">Protection</label>
+                            <input type="text" id="armorProtection" class="input-line h-7" data-key="armorProtection">
+                        </div>
+                        <div class="mt-2">
+                            <label class="label-text">Agility</label>
+                            <input type="text" id="armorAgility" class="input-line h-7" data-key="armorAgility">
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="sheet-subheader">MEMENTO</div>
+                        <div class="mt-2">
+                            <label class="label-text">Bonus</label>
+                            <input type="text" id="mementoBonus" class="input-line h-7" data-key="mementoBonus">
+                        </div>
+                        <div class="mt-2">
+                            <label class="label-text">Resources</label>
+                            <input type="text" id="resources" class="input-line h-7" data-key="resources">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW: Notes Section -->
+                <div class="pt-2">
+                    <label class="label-text">Notes</label>
+                    <textarea id="notes" class="text-block-input" data-key="notes" style="min-height: 5rem;"></textarea>
+                </div>
+
+                <!-- Conditions -->
+                <div class="pt-4">
+                    <div class="sheet-header">CONDITIONS</div>
+                    <div class="grid grid-cols-2 gap-4 text-sm font-medium">
+                        <div class="space-y-2">
+                            <p class="font-bold uppercase text-xs border-b border-gray-400 pb-1">PHYSICAL</p>
+                            <label class="flex items-center text-sm">
+                                <input type="checkbox" data-condition="exhausted" class="condition-checkbox">
+                                Exhausted
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="checkbox" data-condition="battered" class="condition-checkbox">
+                                Battered
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="checkbox" data-condition="wounded" class="condition-checkbox">
+                                Wounded
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="checkbox" data-condition="brokenPhysical" class="condition-checkbox">
+                                Broken
+                            </label>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="font-bold uppercase text-xs border-b border-gray-400 pb-1">MENTAL</p>
+                            <label class="flex items-center text-sm">
+                                <input type="checkbox" data-condition="angry" class="condition-checkbox">
+                                Angry
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="checkbox" data-condition="frightened" class="condition-checkbox">
+                                Frightened
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="checkbox" data-condition="hopeless" class="condition-checkbox">
+                                Hopeless
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="checkbox" data-condition="brokenMental" class="condition-checkbox">
+                                Broken
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <label class="label-text">Equipment</label>
+                    <textarea id="equipment" class="text-block-input" data-key="equipment" style="min-height: 5rem;"></textarea>
+                </div>
+
+                <!-- Experience (REVERTED to single number input) -->
+                <div class="pt-2 flex items-center justify-between">
+                    <label class="label-text m-0">Experience</label>
+                    <input type="number" id="experience" min="0" value="0" class="score-box w-20 h-7" data-key="experience">
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW: Reset Button -->
+        <div class="mt-8 pt-4 border-t-2 border-gray-900 flex justify-center">
+            <button onclick="resetCharacterSheet()" class="io-button bg-gray-500 text-white text-base hover:bg-gray-400 w-full max-w-sm">RESET ALL DATA</button>
+        </div>
+
+    </div>
+
+    <!-- Message box for Import/Export Feedback -->
+    <div id="message-box" class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-xl hidden transition-opacity duration-300"></div>
+
+    <script>
+        // --- Data Definitions ---
+        const LOCAL_STORAGE_KEY = 'vaesenCharacterSheetData';
+
+        const SKILL_MAP = [
+            { name: "Agility", attr: "physique", key: "agility", attrAbbr: "PHY" },
+            { name: "Close Combat", attr: "physique", key: "closeCombat", attrAbbr: "PHY" },
+            { name: "Force", attr: "physique", key: "force", attrAbbr: "PHY" },
+            { name: "Medicine", attr: "precision", key: "medicine", attrAbbr: "PRE" },
+            { name: "Ranged Combat", attr: "precision", key: "rangedCombat", attrAbbr: "PRE" },
+            { name: "Stealth", attr: "precision", key: "stealth", attrAbbr: "PRE" },
+            { name: "Investigation", attr: "logic", key: "investigation", attrAbbr: "LOG" },
+            { name: "Learning", attr: "logic", key: "learning", attrAbbr: "LOG" },
+            { name: "Vigilance", attr: "logic", key: "vigilance", attrAbbr: "LOG" },
+            { name: "Inspiration", attr: "empathy", key: "inspiration", attrAbbr: "EMP" },
+            { name: "Manipulation", attr: "empathy", key: "manipulation", attrAbbr: "EMP" },
+            { name: "Observation", attr: "empathy", key: "observation", attrAbbr: "EMP" },
+        ];
+
+        // Define a function to get the clean default state object
+        function getDefaultCharacterData() {
+            return {
+                name: "", age: "", motivation: "", trauma: "", darkSecret: "", archetype: "Academic", talents: "", insightsDefects: "", advantages: "",
+                armorProtection: "", armorAgility: "", mementoBonus: "", resources: "",
+                equipment: "", 
+                notes: "", 
+                experience: 0, 
+                attributes: { physique: 1, precision: 1, logic: 1, empathy: 1 },
+                skills: SKILL_MAP.reduce((acc, skill) => ({ ...acc, [skill.key]: 0 }), {}),
+                weapons: [
+                    { name: "Knife", damage: "1", range: "Close", bonus: "" },
+                    { name: "Pistol", damage: "2", range: "Short", bonus: "" }
+                ], 
+                conditions: {
+                    exhausted: false, battered: false, wounded: false, brokenPhysical: false,
+                    angry: false, frightened: false, hopeless: false, brokenMental: false
+                }
+            };
+        }
+
+        // Initialize global data variable
+        let characterData = getDefaultCharacterData();
+
+        // --- Local Storage Functions ---
+
+        /** Saves the current characterData to localStorage (Manual Save) */
+        function saveLocalCharacter() {
+            try {
+                // To guarantee the latest data (especially in textareas) is captured on save/export, 
+                // we iterate over all data-bound inputs and update the central model (characterData).
+                document.querySelectorAll('input, textarea, select').forEach(input => {
+                    updateData(input);
+                });
+
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(characterData));
+                console.log("Character saved to localStorage successfully.");
+                showMessage('Character saved to local storage!');
+            } catch (e) {
+                console.error("Error saving character to localStorage:", e);
+                showMessage('Error saving character.');
+            }
+        }
+
+        /** Loads character data from localStorage on startup */
+        function loadLocalCharacter() {
+            try {
+                const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    loadDataToUI(parsedData);
+                    showMessage('Character data loaded from local storage.');
+                    console.log("Character loaded from localStorage.");
+                } else {
+                    console.log("No saved character found in local storage. Using default data.");
+                }
+            } catch (e) {
+                console.error("Error loading character from localStorage:", e);
+            }
+        }
+        
+        // --- Utility Functions ---
+
+        /** Shows a temporary message in the fixed box */
+        function showMessage(text) {
+            const box = document.getElementById('message-box');
+            box.textContent = text;
+            box.classList.remove('hidden', 'opacity-0');
+            box.classList.add('opacity-100');
+            setTimeout(() => {
+                box.classList.remove('opacity-100');
+                box.classList.add('opacity-0');
+                setTimeout(() => box.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        /** Creates the HTML options for a score dropdown (min-max) */
+        function createScoreOptions(min, max, currentValue) {
+            let options = '';
+            for (let i = min; i <= max; i++) {
+                options += `<option value="${i}" ${i === currentValue ? 'selected' : ''}>${i}</option>`;
+            }
+            return options;
+        }
+
+        // --- Skill Rendering and Calculations ---
+
+        /** Renders all skill rows dynamically based on SKILL_MAP */
+        function renderSkills() {
+            const skillList = document.getElementById('skills-list');
+            const skillRollSelect = document.getElementById('skill-to-roll');
+            skillList.innerHTML = ''; 
+            skillRollSelect.innerHTML = '<option value="">-- Select Skill --</option>';
+
+            SKILL_MAP.forEach(skill => {
+                const skillPoints = characterData.skills[skill.key];
+                const skillTotal = characterData.attributes[skill.attr] + skillPoints;
+                const attrScore = characterData.attributes[skill.attr];
+                
+                // Render list item for the sheet
+                const skillElement = document.createElement('div');
+                skillElement.className = 'flex justify-between items-center skill-row';
+                skillElement.innerHTML = `
+                    <span class="text-sm font-semibold">
+                        ${skill.name} (<span class="text-xs uppercase font-normal">${skill.attrAbbr}</span>)
+                    </span>
+                    <div class="flex space-x-2 items-center">
+                        <!-- Attribute Score Display (Read-only) -->
+                        <div id="attr-disp-${skill.key}" class="score-box attr-display w-7 h-7 text-sm">
+                            ${attrScore}
+                        </div>
+                        <span class="text-md font-bold text-gray-700">+</span>
+                        <!-- Skill Points Dropdown (Editable) -->
+                        <div class="score-box w-7 h-7 text-sm">
+                           <select class="score-dropdown" data-skill-key="${skill.key}" onchange="updateData(this)">
+                                ${createScoreOptions(0, 5, skillPoints)}
+                           </select>
+                        </div>
+                        <span class="text-md font-bold text-gray-700">=</span>
+                        <!-- Total Skill Score (Calculated) -->
+                        <div id="total-score-${skill.key}" data-total-score="${skillTotal}" class="score-box total-score w-8 h-8 text-base">
+                            ${skillTotal} 
+                        </div>
+                    </div>
+                `;
+                skillList.appendChild(skillElement);
+
+                // Populate roller select
+                const option = document.createElement('option');
+                option.value = skill.key;
+                option.textContent = `${skill.name} (${skillTotal} dice)`;
+                skillRollSelect.appendChild(option);
+            });
+            
+            // Set up listener for the roller select
+            skillRollSelect.onchange = updateDiceCountDisplay;
+            // Also update the display when skills render
+            updateDiceCountDisplay(); 
+        }
+
+        /** Updates the total skill score for a specific skill and all roller options */
+        function updateSkillTotal(skillKey) {
+            const skillInfo = SKILL_MAP.find(s => s.key === skillKey);
+            const attrScore = characterData.attributes[skillInfo.attr];
+            const skillPoints = characterData.skills[skillKey];
+            const total = attrScore + skillPoints;
+
+            const totalScoreElement = document.getElementById(`total-score-${skillKey}`);
+
+            if (totalScoreElement) {
+                totalScoreElement.textContent = total; 
+                totalScoreElement.setAttribute('data-total-score', total);
+            }
+            // Update the read-only attribute score in the skill list for all related skills
+            SKILL_MAP.filter(s => s.attr === skillInfo.attr).forEach(s => {
+                const disp = document.getElementById(`attr-disp-${s.key}`);
+                if (disp) disp.textContent = attrScore;
+            });
+            
+            // Re-render skills to update the roller options list
+            // This is crucial for updating the dice counts in the roller dropdown menu
+            renderSkills(); 
+        }
+
+        // --- Dice Roller Logic ---
+
+        /** Updates the number input to match the selected skill's total dice count */
+        function updateDiceCountDisplay() {
+            const select = document.getElementById('skill-to-roll');
+            if (!select) return; 
+
+            const skillKey = select.value;
+            let diceCount = 0;
+
+            if (skillKey) {
+                const skillInfo = SKILL_MAP.find(s => s.key === skillKey);
+                if (skillInfo) {
+                    diceCount = characterData.attributes[skillInfo.attr] + characterData.skills[skillKey];
+                }
+            }
+        }
+
+        /** Simulates rolling 6-sided dice and reports results */
+        function rollDice() {
+            const select = document.getElementById('skill-to-roll');
+            const resultsBox = document.getElementById('roll-results');
+            
+            const skillKey = select.value;
+            if (!skillKey) {
+                resultsBox.innerHTML = 'Please select a skill to roll.';
+                return;
+            }
+
+            const skillInfo = SKILL_MAP.find(s => s.key === skillKey);
+            const diceCount = characterData.attributes[skillInfo.attr] + characterData.skills[skillKey];
+
+
+            if (diceCount <= 0) {
+                resultsBox.innerHTML = 'Cannot roll, total dice count is 0.';
+                return;
+            }
+
+            let successes = 0;
+            let rolls = [];
+
+            for (let i = 0; i < diceCount; i++) {
+                // Vaesen uses D6
+                const roll = Math.floor(Math.random() * 6) + 1;
+                rolls.push(roll);
+                if (roll >= 6) { // Success on a 6
+                    successes++;
+                }
+            }
+
+            const rollSummary = rolls.map(r => 
+                `<span class="${r >= 6 ? 'text-green-800 font-extrabold' : 'text-gray-800'}">${r}</span>`
+            ).join(', ');
+
+            let resultText = `**Result:** Rolled ${diceCount} dice for **${skillInfo.name}**. `;
+            if (successes === 0) {
+                resultText += `<span class="text-red-700">No Successes (Failure!)</span>`;
+            } else if (successes === 1) {
+                resultText += `<span class="text-green-700">1 Success!</span>`;
+            } else {
+                resultText += `<span class="text-green-700">${successes} Successes!</span>`;
+            }
+            resultText += `<br><span class="text-xs font-normal">Rolls: [${rollSummary}]`;
+
+            resultsBox.innerHTML = resultText;
+        }
+
+        /** Resets the dice roller UI and message */
+        function resetDiceRoller() {
+            document.getElementById('skill-to-roll').value = '';
+            document.getElementById('roll-results').innerHTML = 'Roll the dice! Success is a 6.';
+            updateDiceCountDisplay();
+            showMessage('Dice roller reset.');
+        }
+
+        // --- Weapon Rendering and Logic ---
+        
+        /** Renders all weapons in the characterData array */
+        function renderWeapons() {
+            const weaponList = document.getElementById('weapons-list');
+            weaponList.innerHTML = '';
+
+            characterData.weapons.forEach((weapon, index) => {
+                const weaponRow = document.createElement('div');
+                weaponRow.className = 'grid grid-cols-5 gap-2 items-center';
+                weaponRow.innerHTML = `
+                    <input type="text" class="input-line text-left h-7 col-span-1" data-weapon-field="name" data-weapon-index="${index}" value="${weapon.name}" oninput="updateData(this)">
+                    <input type="text" class="input-line text-center h-7" data-weapon-field="damage" data-weapon-index="${index}" value="${weapon.damage}" oninput="updateData(this)">
+                    <input type="text" class="input-line text-center h-7" data-weapon-field="range" data-weapon-index="${index}" value="${weapon.range}" oninput="updateData(this)">
+                    <input type="text" class="input-line text-center h-7" data-weapon-field="bonus" data-weapon-index="${index}" value="${weapon.bonus}" oninput="updateData(this)">
+                    <button onclick="removeWeaponRow(${index})" class="io-button bg-red-600 text-white h-7 text-xs p-0 px-2 hover:bg-red-500">X</button>
+                `;
+                weaponList.appendChild(weaponRow);
+            });
+        }
+
+        /** Adds a new blank weapon to the character data and re-renders */
+        function addWeaponRow() {
+            characterData.weapons.push({ name: "", damage: "", range: "", bonus: "" });
+            renderWeapons();
+            // No auto-save here, wait for manual Save button click
+        }
+
+        /** Removes a weapon by index and re-renders */
+        function removeWeaponRow(index) {
+            // Allows the array to become empty.
+            characterData.weapons.splice(index, 1);
+            renderWeapons();
+            // No auto-save here, wait for manual Save button click
+        }
+        
+        // --- Core Application Logic ---
+
+        /** Resets the character sheet to default state and clears local storage. */
+        function resetCharacterSheet() {
+            const isConfirmed = window.confirm("Are you sure you want to completely clear the current character sheet and delete the locally saved data?");
+            
+            if (isConfirmed) {
+                // 1. Reset the internal data model
+                characterData = getDefaultCharacterData();
+                
+                // 2. Clear local storage
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                
+                // 3. Update the UI
+                loadDataToUI(characterData); 
+                
+                showMessage('Character sheet cleared. Starting new character!');
+            }
+        }
+
+        /** Updates character data from an input element, recalculates skills, and triggers local save */
+        function updateData(element) {
+            const key = element.getAttribute('data-key');
+            const attr = element.getAttribute('data-attr');
+            const skillKey = element.getAttribute('data-skill-key');
+            const condition = element.getAttribute('data-condition');
+            const wIndex = element.getAttribute('data-weapon-index');
+            const wField = element.getAttribute('data-weapon-field');
+
+            let value;
+            if (element.type === 'number') {
+                // Read the current value
+                value = parseInt(element.value) || 0;
+            } else if (element.type === 'checkbox') {
+                value = element.checked;
+            } else if (element.tagName === 'SELECT') {
+                 // For dropdowns, value is the option value (string, convert to int for scores)
+                value = (attr || skillKey) ? parseInt(element.value) : element.value;
+            }
+             else {
+                value = element.value;
+            }
+
+            let recalculate = false;
+
+            // Handle general keys
+            if (key) {
+                characterData[key] = value;
+            }
+            // Handle Attributes
+            else if (attr) {
+                characterData.attributes[attr] = value;
+                recalculate = true;
+            }
+            // Handle Skills
+            else if (skillKey) {
+                characterData.skills[skillKey] = value;
+                recalculate = true;
+            }
+            // Handle Conditions
+            else if (condition) {
+                characterData.conditions[condition] = value;
+            }
+            // Handle Dynamic Weapons
+            else if (wIndex !== null && wField) {
+                const index = parseInt(wIndex);
+                if (characterData.weapons[index]) {
+                    characterData.weapons[index][wField] = value;
+                }
+            }
+
+            // Recalculate if needed
+            if (recalculate) {
+                // If an attribute changes, update all related skills
+                if (attr) {
+                    SKILL_MAP.filter(s => s.attr === attr).forEach(s => updateSkillTotal(s.key));
+                }
+                // If a skill changes, update only that skill
+                else if (skillKey) {
+                    updateSkillTotal(skillKey);
+                }
+            }
+            // NOTE: Automatic saveLocalCharacter() call was removed here to prevent freezing.
+        }
+
+        /** Loads characterData onto the sheet inputs and updates global model */
+        function loadDataToUI(data) {
+            // Update global data model first, merging loaded data over defaults
+            characterData = {...getDefaultCharacterData(), ...data, // Start with a fresh default, then merge data
+                // Ensure attributes/skills/conditions are merged correctly, providing defaults if absent
+                attributes: {...getDefaultCharacterData().attributes, ...data.attributes},
+                skills: {...getDefaultCharacterData().skills, ...data.skills},
+                conditions: {...getDefaultCharacterData().conditions, ...data.conditions},
+                // Ensure the new 'notes' field is included, using empty string default if missing in import
+                notes: data.notes !== undefined ? data.notes : getDefaultCharacterData().notes,
+                weapons: Array.isArray(data.weapons) ? data.weapons : getDefaultCharacterData().weapons
+            };
+
+            // 1. Simple text/number/select inputs (data-key)
+            document.querySelectorAll('[data-key]').forEach(input => {
+                const key = input.getAttribute('data-key');
+                let value = characterData[key];
+                
+                if (value !== undefined) {
+                    input.value = value;
+                }
+            });
+
+            // 2. Attributes (Specific fix for dropdowns)
+            document.querySelectorAll('[data-attr]').forEach(select => {
+                const attr = select.getAttribute('data-attr');
+                if (characterData.attributes && characterData.attributes[attr] !== undefined) {
+                    // Set the selected option based on the imported value
+                    select.value = characterData.attributes[attr];
+                }
+            });
+
+            // 3. Conditions
+            document.querySelectorAll('[data-condition]').forEach(input => {
+                const condition = input.getAttribute('data-condition');
+                if (characterData.conditions && characterData.conditions[condition] !== undefined) {
+                    input.checked = characterData.conditions[condition];
+                }
+            });
+
+            // Re-render dynamic components
+            renderWeapons();
+            renderSkills();
+
+            // Final refresh: Update all calculated fields
+            Object.keys(characterData.attributes).forEach(attr => {
+                 SKILL_MAP.filter(s => s.attr === attr).forEach(s => updateSkillTotal(s.key));
+            });
+            updateDiceCountDisplay();
+        }
+
+        /** Handles file selection and initiates import */
+        function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    loadDataToUI(importedData);
+                    // Also save the newly imported data locally
+                    saveLocalCharacter(); // Save the imported data once manually
+                    showMessage('Character data imported successfully!');
+                } catch (error) {
+                    console.error('Error importing data:', error);
+                    showMessage('Error: Invalid JSON file.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Clear file input
+        }
+
+        /** Generates and downloads the current sheet data as a JSON file */
+        function exportData() {
+            // Ensure data is fully updated one last time before export/save is triggered
+            document.querySelectorAll('input, textarea, select').forEach(input => {
+                 updateData(input); // Syncs UI elements to the data model
+            }); 
+            saveLocalCharacter(); // Save the final state locally before exporting
+
+            const dataStr = JSON.stringify(characterData, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            
+            const filename = (characterData.name || 'new_vaesen_character')
+                                .toLowerCase()
+                                .replace(/[^a-z0-9]+/g, '_')
+                                .substring(0, 30); // Sanitize filename
+            
+            link.download = `${filename}.json`;
+            link.href = url;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showMessage('Character data exported successfully!');
+        }
+
+
+        // --- Initialization ---
+
+        function init() {
+            // Attempt to load locally saved data first
+            loadLocalCharacter(); 
+
+            // Initial render of complex sections
+            renderSkills();
+            renderWeapons();
+
+            // Set up universal event listener for form inputs to update data model
+            // NOTE: This updates the data model only, no saving is triggered automatically.
+            document.getElementById('app').addEventListener('input', (event) => {
+                if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                    updateData(event.target);
+                }
+            });
+            document.getElementById('app').addEventListener('change', (event) => {
+                if (event.target.type === 'checkbox' || event.target.tagName === 'SELECT') {
+                    updateData(event.target);
+                }
+            });
+            
+            // Ensure UI reflects the loaded data if loading failed or was empty
+            loadDataToUI(characterData); 
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
