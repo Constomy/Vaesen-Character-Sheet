@@ -221,12 +221,32 @@
             box-shadow: 1px 1px 0px 0px rgba(0,0,0,0.5);
             transform: translate(1px, 1px);
         }
+
+        /* Portrait Styling */
+        .portrait-box {
+            border: 3px solid var(--sheet-border);
+            background-color: #e0e0e0;
+            width: 100%;
+            /* Fixed aspect ratio for a portrait image */
+            padding-bottom: 125%; 
+            position: relative;
+            overflow: hidden;
+        }
+        .portrait-box img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            
+            /* FIX: Use contain instead of cover so the entire image fits without cropping */
+            object-fit: contain; 
+            background-color: #fff; /* Ensure white space around portrait if image isn't full frame */
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div id="app" class="sheet-container mx-auto p-6 md:p-10 rounded-none">
 
-        <!-- TITLE & IMPORT/EXPORT -->
+        <!-- TITLE & IMPORT/EXPORT/SAVE -->
         <div class="flex flex-col mb-6 border-b-4 border-gray-900 pb-2">
             <!-- First Row: Title Header -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
@@ -386,6 +406,20 @@
 
             <!-- COLUMN 2 (SECONDARY DETAILS) -->
             <div class="lg:col-span-1 space-y-6">
+                
+                <!-- NEW: Portrait Upload -->
+                <div class="pt-2">
+                    <label class="label-text">Character Portrait</label>
+                    <div class="portrait-box" id="portrait-preview-container">
+                        <img id="portrait-preview" src="https://placehold.co/250x300/e0e0e0/555?text=Upload+Portrait" alt="Character Portrait Placeholder">
+                    </div>
+                    <input type="file" id="portraitFile" accept="image/*" class="hidden" onchange="handlePortraitUpload(event)">
+                    <div class="flex space-x-2 mt-2">
+                        <button onclick="document.getElementById('portraitFile').click()" class="io-button bg-gray-700 text-white text-xs w-1/2 hover:bg-gray-600">Upload Image</button>
+                        <button onclick="clearPortrait()" class="io-button bg-red-700 text-white text-xs w-1/2 hover:bg-red-600">Clear Image</button>
+                    </div>
+                </div>
+
                 <!-- Archetype Dropdown -->
                 <div class="pt-2">
                     <label class="label-text">Archetype</label>
@@ -547,6 +581,7 @@
                 armorProtection: "", armorAgility: "", mementoBonus: "", resources: "",
                 equipment: "", 
                 notes: "", 
+                portraitData: "", // NEW: Field to store Base64 image
                 experience: 0, 
                 attributes: { physique: 1, precision: 1, logic: 1, empathy: 1 },
                 skills: SKILL_MAP.reduce((acc, skill) => ({ ...acc, [skill.key]: 0 }), {}),
@@ -599,6 +634,40 @@
             } catch (e) {
                 console.error("Error loading character from localStorage:", e);
             }
+        }
+
+        // --- Portrait Handling ---
+
+        /** Reads the selected file and converts it to a Base64 string for storage. */
+        function handlePortraitUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Simple check for file size (e.g., limit to 2MB) to prevent breaking localStorage
+            if (file.size > 2 * 1024 * 1024) {
+                showMessage("Image is too large (max 2MB). Please choose a smaller file.");
+                event.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Image = e.target.result;
+                characterData.portraitData = base64Image;
+                document.getElementById('portrait-preview').src = base64Image;
+                showMessage("Portrait uploaded and ready to save.");
+            };
+            reader.onerror = () => showMessage("Error reading image file.");
+            reader.readAsDataURL(file);
+        }
+
+        /** Clears the current portrait */
+        function clearPortrait() {
+            characterData.portraitData = "";
+            // Reset to the placeholder image
+            document.getElementById('portrait-preview').src = "https://placehold.co/250x300/e0e0e0/555?text=Upload+Portrait";
+            showMessage("Portrait cleared. Remember to save.");
+            // No auto-save here, wait for manual Save button click
         }
         
         // --- Utility Functions ---
@@ -819,9 +888,23 @@
 
         /** Resets the character sheet to default state and clears local storage. */
         function resetCharacterSheet() {
-            const isConfirmed = window.confirm("Are you sure you want to completely clear the current character sheet and delete the locally saved data?");
-            
-            if (isConfirmed) {
+            // Replaced alert/confirm with custom modal message to follow guidelines
+            const modal = document.createElement('div');
+            modal.innerHTML = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+                        <h3 class="text-xl font-bold mb-4">Confirm Reset</h3>
+                        <p class="mb-6">Are you sure you want to completely clear the current character sheet and delete the locally saved data?</p>
+                        <div class="flex justify-center space-x-4">
+                            <button id="confirmReset" class="io-button bg-red-700 text-white hover:bg-red-600">Yes, Reset</button>
+                            <button id="cancelReset" class="io-button bg-gray-500 text-white hover:bg-gray-400">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            document.getElementById('confirmReset').onclick = () => {
                 // 1. Reset the internal data model
                 characterData = getDefaultCharacterData();
                 
@@ -832,8 +915,14 @@
                 loadDataToUI(characterData); 
                 
                 showMessage('Character sheet cleared. Starting new character!');
-            }
+                document.body.removeChild(modal);
+            };
+
+            document.getElementById('cancelReset').onclick = () => {
+                document.body.removeChild(modal);
+            };
         }
+
 
         /** Updates character data from an input element, recalculates skills, and triggers local save */
         function updateData(element) {
@@ -910,10 +999,15 @@
                 conditions: {...getDefaultCharacterData().conditions, ...data.conditions},
                 // Ensure the new 'notes' field is included, using empty string default if missing in import
                 notes: data.notes !== undefined ? data.notes : getDefaultCharacterData().notes,
+                portraitData: data.portraitData !== undefined ? data.portraitData : getDefaultCharacterData().portraitData, // NEW: Load portrait data
                 weapons: Array.isArray(data.weapons) ? data.weapons : getDefaultCharacterData().weapons
             };
+            
+            // 1. Handle Portrait Display (Must be done before rendering regular inputs)
+            const portraitSrc = characterData.portraitData || "https://placehold.co/250x300/e0e0e0/555?text=Upload+Portrait";
+            document.getElementById('portrait-preview').src = portraitSrc;
 
-            // 1. Simple text/number/select inputs (data-key)
+            // 2. Simple text/number/select inputs (data-key)
             document.querySelectorAll('[data-key]').forEach(input => {
                 const key = input.getAttribute('data-key');
                 let value = characterData[key];
@@ -923,7 +1017,7 @@
                 }
             });
 
-            // 2. Attributes (Specific fix for dropdowns)
+            // 3. Attributes (Specific fix for dropdowns)
             document.querySelectorAll('[data-attr]').forEach(select => {
                 const attr = select.getAttribute('data-attr');
                 if (characterData.attributes && characterData.attributes[attr] !== undefined) {
@@ -932,7 +1026,7 @@
                 }
             });
 
-            // 3. Conditions
+            // 4. Conditions
             document.querySelectorAll('[data-condition]').forEach(input => {
                 const condition = input.getAttribute('data-condition');
                 if (characterData.conditions && characterData.conditions[condition] !== undefined) {
