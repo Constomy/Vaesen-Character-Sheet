@@ -255,6 +255,14 @@
             </div>
             
             <!-- Second Row: Buttons (The requested break is here) -->
+            <div class="flex items-center mb-4">
+                <input id="auto-save-checkbox" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                <label for="auto-save-checkbox" class="ms-2 text-sm font-medium">Auto-Saving</label>
+            </div>
+            <div class="flex items-center mb-4">
+                <label class="ms-2 text-sm font-medium">Save Interval (Seconds): </label>
+                <input id="auto-save-interval" type="text" class="input-line text-left h-7 w-1/4">
+            </div>
             <div class="flex justify-end space-x-2 mt-4 sm:mt-0 pt-2 border-t border-gray-300">
                 <input type="file" id="importFile" accept=".json" class="hidden" onchange="handleImport(event)">
                 <button onclick="document.getElementById('importFile').click()" class="io-button bg-gray-700 text-white text-sm hover:bg-gray-600">Import JSON</button>
@@ -402,6 +410,28 @@
                     </div>
                     <button onclick="addWeaponRow()" class="io-button bg-gray-500 text-white text-sm mt-3 w-full hover:bg-gray-400">+ Add Weapon</button>
                 </div>
+                <div class="pt-4">
+                    <div class="sheet-subheader">Talents</div>
+                    <div class="grid grid-cols-5 gap-2 text-xs font-semibold uppercase mb-1 border-b pb-1 border-gray-500 text-center">
+                        <span class="col-span-1 font-bold">Name</span>
+                        <span class="col-span-3 font-bold">Description</span>
+                    </div>
+                    <div id="talents-list" class="space-y-2">
+                         <!-- Talent Rows Rendered by JS -->
+                    </div>
+                    <button onclick="addTalentRow()" class="io-button bg-gray-500 text-white text-sm mt-3 w-full hover:bg-gray-400">+ Add Talent</button>
+                </div>
+                <div class="pt-4">
+                    <div class="sheet-subheader">Equipment</div>
+                    <div class="grid grid-cols-5 gap-2 text-xs font-semibold uppercase mb-1 border-b pb-1 border-gray-500 text-center">
+                        <span class="col-span-1 font-bold">Name</span>
+                        <span class="col-span-3 font-bold">Description</span>
+                    </div>
+                    <div id="equipment-list" class="space-y-2">
+                         <!-- Talent Rows Rendered by JS -->
+                    </div>
+                    <button onclick="addEquipmentRow()" class="io-button bg-gray-500 text-white text-sm mt-3 w-full hover:bg-gray-400">+ Add Equipment</button>
+                </div>
             </div>
 
             <!-- COLUMN 2 (SECONDARY DETAILS) -->
@@ -442,10 +472,11 @@
                 </div>
 
                 <!-- Text Blocks -->
-                <div class="pt-2">
+                <!-- <div class="pt-2">
                     <label class="label-text">Talents</label>
                     <textarea id="talents" class="text-block-input" data-key="talents" style="min-height: 5rem;"></textarea>
                 </div>
+                -->
                 <div class="pt-2">
                     <label class="label-text">Insights & Defects</label>
                     <textarea id="insightsDefects" class="text-block-input" data-key="insightsDefects" style="min-height: 5rem;"></textarea>
@@ -532,10 +563,11 @@
                     </div>
                 </div>
 
-                <div class="pt-2">
+                <!--<div class="pt-2">
                     <label class="label-text">Equipment</label>
                     <textarea id="equipment" class="text-block-input" data-key="equipment" style="min-height: 5rem;"></textarea>
                 </div>
+                -->
 
                 <!-- Experience (REVERTED to single number input) -->
                 <div class="pt-2 flex items-center justify-between">
@@ -577,9 +609,8 @@
         // Define a function to get the clean default state object
         function getDefaultCharacterData() {
             return {
-                name: "", age: "", motivation: "", trauma: "", darkSecret: "", archetype: "Academic", talents: "", insightsDefects: "", advantages: "",
+                name: "", age: "", motivation: "", trauma: "", darkSecret: "", archetype: "Academic", insightsDefects: "", advantages: "",
                 armorProtection: "", armorAgility: "", mementoBonus: "", resources: "",
-                equipment: "", 
                 notes: "", 
                 portraitData: "", // NEW: Field to store Base64 image
                 experience: 0, 
@@ -588,6 +619,12 @@
                 weapons: [
                     { name: "Knife", damage: "1", range: "Close", bonus: "" },
                     { name: "Pistol", damage: "2", range: "Short", bonus: "" }
+                ],
+                talents: [
+
+                ],
+                equipment: [
+
                 ], 
                 conditions: {
                     exhausted: false, battered: false, wounded: false, brokenPhysical: false,
@@ -598,11 +635,12 @@
 
         // Initialize global data variable
         let characterData = getDefaultCharacterData();
+        let saveIntervalID = null;
 
         // --- Local Storage Functions ---
 
         /** Saves the current characterData to localStorage (Manual Save) */
-        function saveLocalCharacter() {
+        function saveLocalCharacter(override_message = false) {
             try {
                 // To guarantee the latest data (especially in textareas) is captured on save/export, 
                 // we iterate over all data-bound inputs and update the central model (characterData).
@@ -611,8 +649,11 @@
                 });
 
                 localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(characterData));
-                console.log("Character saved to localStorage successfully.");
-                showMessage('Character saved to local storage!');
+                if (override_message !== true){
+                    console.log("Character saved to localStorage successfully.");
+                    showMessage('Character saved to local storage!');
+                }
+                
             } catch (e) {
                 console.error("Error saving character to localStorage:", e);
                 showMessage('Error saving character.');
@@ -869,12 +910,51 @@
             });
         }
 
+        function renderTalents(){
+            const talentList = document.getElementById("talents-list");
+            talentList.innerHTML = '';
+            characterData.talents.forEach((talent, index) => {
+                const talentRow = document.createElement('div');
+                talentRow.className = 'grid grid-cols-5 gap-2 items-center';
+                talentRow.innerHTML = `
+                    <input type="text" class="input-line text-left h-7 col-span-1" data-talent-field="name" data-talent-index="${index}" value="${talent.name}" oninput="updateData(this)">
+                    <input type="text" class="input-line text-left h-7 col-span-3" data-talent-field="description" data-talent-index="${index}" value="${talent.description}" oninput="updateData(this)">
+                    <button onclick="removeTalentRow(${index})" class="io-button bg-red-600 text-white h-7 text-xs p-0 px-2 hover:bg-red-500">X</button>
+                `
+                talentList.appendChild(talentRow);
+            });
+        }
+
+        function renderEquipment(){
+            const equipmentList = document.getElementById("equipment-list");
+            equipmentList.innerHTML = '';
+            characterData.equipment.forEach((equipment, index) => {
+                const equipmentRow = document.createElement('div');
+                equipmentRow.className = 'grid grid-cols-5 gap-2 items-center';
+                equipmentRow.innerHTML = `
+                    <input type="text" class="input-line text-left h-7 col-span-1" data-equipment-field="name" data-equipment-index="${index}" value="${equipment.name}" oninput="updateData(this)">
+                    <input type="text" class="input-line text-left h-7 col-span-3" data-equipment-field="description" data-equipment-index="${index}" value="${equipment.description}" oninput="updateData(this)">
+                    <button onclick="removeEquipmentRow(${index})" class="io-button bg-red-600 text-white h-7 text-xs p-0 px-2 hover:bg-red-500">X</button>
+                `
+                equipmentList.appendChild(equipmentRow);
+            })
+        }
+
         /** Adds a new blank weapon to the character data and re-renders */
         function addWeaponRow() {
             characterData.weapons.push({ name: "", damage: "", range: "", bonus: "" });
             renderWeapons();
             // No auto-save here, wait for manual Save button click
         }
+        function addTalentRow(){
+            characterData.talents.push({name: "", description: ""})
+            renderTalents();
+        }
+        function addEquipmentRow(){
+            characterData.equipment.push({name: "", description: ""})
+            renderEquipment();
+        }
+        
 
         /** Removes a weapon by index and re-renders */
         function removeWeaponRow(index) {
@@ -882,6 +962,14 @@
             characterData.weapons.splice(index, 1);
             renderWeapons();
             // No auto-save here, wait for manual Save button click
+        }
+        function removeTalentRow(index){
+            characterData.talents.splice(index, 1);
+            renderTalents();
+        }
+        function removeEquipmentRow(index){
+            characterData.equipment.splice(index, 1);
+            renderEquipment();
         }
         
         // --- Core Application Logic ---
@@ -932,6 +1020,10 @@
             const condition = element.getAttribute('data-condition');
             const wIndex = element.getAttribute('data-weapon-index');
             const wField = element.getAttribute('data-weapon-field');
+            const tIndex = element.getAttribute('data-talent-index');
+            const tField = element.getAttribute('data-talent-field');
+            const eIndex = element.getAttribute('data-equipment-index');
+            const eField = element.getAttribute('data-equipment-field');
 
             let value;
             if (element.type === 'number') {
@@ -972,6 +1064,18 @@
                 const index = parseInt(wIndex);
                 if (characterData.weapons[index]) {
                     characterData.weapons[index][wField] = value;
+                }
+            }
+            else if (tIndex !== null && tField){
+                const index = parseInt(tIndex);
+                if (characterData.talents[index]){
+                    characterData.talents[index][tField] = value;
+                }
+            }
+            else if (eIndex !== null && eField){
+                const index = parseInt(eIndex);
+                if (characterData.equipment[index]){
+                    characterData.equipment[index][eField] = value;
                 }
             }
 
@@ -1036,6 +1140,8 @@
 
             // Re-render dynamic components
             renderWeapons();
+            renderTalents();
+            renderEquipment();
             renderSkills();
 
             // Final refresh: Update all calculated fields
@@ -1094,6 +1200,24 @@
             showMessage('Character data exported successfully!');
         }
 
+        function autoSave(){
+            saveLocalCharacter(true);
+        }
+
+        function autoSaveChange(checkbox){
+            if (saveIntervalID !== null){
+                clearInterval(saveIntervalID);
+                saveIntervalID = null;
+            }
+
+            if (checkbox.checked){
+                const seconds = parseFloat(document.getElementById("auto-save-interval").value);
+                if (!Number.isNaN(seconds)){
+                    saveIntervalID = setInterval(autoSave, seconds * 1000);
+                }
+            }
+        }
+
 
         // --- Initialization ---
 
@@ -1104,19 +1228,29 @@
             // Initial render of complex sections
             renderSkills();
             renderWeapons();
+            renderEquipment();
+            renderTalents();
 
             // Set up universal event listener for form inputs to update data model
             // NOTE: This updates the data model only, no saving is triggered automatically.
             document.getElementById('app').addEventListener('input', (event) => {
-                if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                if ((event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') && ((event.target.id !== "auto-save-interval") && (event.target.id !== "auto-save-checkbox"))) {
                     updateData(event.target);
                 }
             });
             document.getElementById('app').addEventListener('change', (event) => {
-                if (event.target.type === 'checkbox' || event.target.tagName === 'SELECT') {
+                if ((event.target.type === 'checkbox' || event.target.tagName === 'SELECT') && ((event.target.id !== "auto-save-interval") && (event.target.id !== "auto-save-checkbox"))) {
                     updateData(event.target);
                 }
             });
+            document.getElementById('auto-save-checkbox').addEventListener('change', () => {
+                autoSaveChange(document.getElementById('auto-save-checkbox'));
+            });
+            document.getElementById('auto-save-interval').addEventListener('change', () => {
+                const checkbox = document.getElementById('auto-save-checkbox');
+                checkbox.checked = false;
+                autoSaveChange(checkbox);
+            })
             
             // Ensure UI reflects the loaded data if loading failed or was empty
             loadDataToUI(characterData); 
@@ -1126,3 +1260,4 @@
     </script>
 </body>
 </html>
+
